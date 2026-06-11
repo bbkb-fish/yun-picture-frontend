@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import { useLoginUserStore } from '@/stores/useLoginUserStore'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -34,6 +35,23 @@ const router = createRouter({
       component: () => import('@/views/admin/AdminManagePage.vue'),
     }
   ],
+})
+
+router.beforeEach(async (to, _from, next) => {
+  // 仅保护 /admin 开头的路由
+  if (to.path.startsWith('/admin')) {
+    const loginUserStore = useLoginUserStore()
+    // 如果登录用户信息还未加载，先拉取
+    if (loginUserStore.loginUser.id === -1) {
+      await loginUserStore.fetchLoginUser()
+    }
+    if (!loginUserStore.isAdmin) {
+      // 非管理员，跳回首页
+      next('/')
+      return
+    }
+  }
+  next()
 })
 
 export default router

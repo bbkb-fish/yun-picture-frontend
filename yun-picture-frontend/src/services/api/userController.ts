@@ -1,11 +1,11 @@
-import myAxios from "@/request";
+import request from "@/request";
 
 /** addUser POST /api/user/add */
 export async function addUserUsingPost(
   body: API.UserAddDTO,
   options?: { [key: string]: any }
 ) {
-  return myAxios<API.BaseResponseLong_>("/api/user/add", {
+  return request<API.BaseResponseLong_>("/api/user/add", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -20,7 +20,7 @@ export async function deleteUserUsingPost(
   body: API.DeleteRequest,
   options?: { [key: string]: any }
 ) {
-  return myAxios<API.BaseResponseBoolean_>("/api/user/delete", {
+  return request<API.BaseResponseBoolean_>("/api/user/delete", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -36,7 +36,7 @@ export async function getUserByIdUsingGet(
   params: API.getUserByIdUsingGETParams,
   options?: { [key: string]: any }
 ) {
-  return myAxios<API.BaseResponseUser_>("/api/user/get", {
+  return request<API.BaseResponseUser_>("/api/user/get", {
     method: "GET",
     params: {
       ...params,
@@ -47,7 +47,7 @@ export async function getUserByIdUsingGet(
 
 /** getLoginUser GET /api/user/get/login */
 export async function getLoginUserUsingGet(options?: { [key: string]: any }) {
-  return myAxios<API.BaseResponseUserLoginVO_>("/api/user/get/login", {
+  return request<API.BaseResponseUserLoginVO_>("/api/user/get/login", {
     method: "GET",
     ...(options || {}),
   });
@@ -59,7 +59,7 @@ export async function getUserVoByIdUsingGet(
   params: API.getUserVOByIdUsingGETParams,
   options?: { [key: string]: any }
 ) {
-  return myAxios<API.BaseResponseUserVO_>("/api/user/get/vo", {
+  return request<API.BaseResponseUserVO_>("/api/user/get/vo", {
     method: "GET",
     params: {
       ...params,
@@ -73,7 +73,7 @@ export async function userLoginUsingPost(
   body: API.UserLoginDTO,
   options?: { [key: string]: any }
 ) {
-  return myAxios<API.BaseResponseUserLoginVO_>("/api/user/login", {
+  return request<API.BaseResponseUserLoginVO_>("/api/user/login", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -85,7 +85,7 @@ export async function userLoginUsingPost(
 
 /** userLogout POST /api/user/logout */
 export async function userLogoutUsingPost(options?: { [key: string]: any }) {
-  return myAxios<API.BaseResponseString_>("/api/user/logout", {
+  return request<API.BaseResponseString_>("/api/user/logout", {
     method: "POST",
     ...(options || {}),
   });
@@ -96,7 +96,7 @@ export async function listUserPageQueryUsingPost(
   body: API.UserQueryDTO,
   options?: { [key: string]: any }
 ) {
-  return myAxios<API.BaseResponsePageUserVO_>("/api/user/page", {
+  return request<API.BaseResponsePageUserVO_>("/api/user/page", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -111,7 +111,7 @@ export async function userRegisterUsingPost(
   body: API.UserRegisterDTO,
   options?: { [key: string]: any }
 ) {
-  return myAxios<API.BaseResponseLong_>("/api/user/register", {
+  return request<API.BaseResponseLong_>("/api/user/register", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -126,7 +126,7 @@ export async function updateUserUsingPost(
   body: API.UserUpdateDTO,
   options?: { [key: string]: any }
 ) {
-  return myAxios<API.BaseResponseBoolean_>("/api/user/update", {
+  return request<API.BaseResponseBoolean_>("/api/user/update", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",

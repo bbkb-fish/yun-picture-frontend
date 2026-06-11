@@ -7,10 +7,10 @@
 <script setup lang="ts">
 import BasicLayout from '@/layouts/BasicLayout.vue'
 import { healthUsingGet } from '@/services/api/mainController'
-// import { useLoginUserStore } from './stores/useLoginUserStore'
+import { useLoginUserStore } from './stores/useLoginUserStore'
 
-// const loginUserStore = useLoginUserStore()
-// loginUserStore.fetchLoginUser()
+const loginUserStore = useLoginUserStore()
+loginUserStore.fetchLoginUser()
 
 healthUsingGet().then(res => {
   console.log(res)

@@ -169,7 +169,7 @@ const submitForm = async (formEl: FormInstance | undefined) => {
           if (redirect) {
             window.location.href = redirect
           } else {
-            router.push('/')
+            router.replace('/')
           }
         } else {
           errMsg.value = res.data.message || '登录失败，请检查账号密码'

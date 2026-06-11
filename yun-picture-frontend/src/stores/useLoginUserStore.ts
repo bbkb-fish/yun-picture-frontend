@@ -1,6 +1,6 @@
 import { computed, ref } from "vue";
 import { defineStore } from "pinia";
-import { getLoginUserUsingGet } from "@/services/api/userController";
+import { getLoginUserUsingGet, userLogoutUsingPost } from "@/services/api/userController";
 
 /**
  * 登录用户信息
@@ -10,6 +10,11 @@ export const useLoginUserStore = defineStore("loginUser", () => {
     userName: "未登录",
     id: -1
   });
+
+  const isLoggedIn = computed(() => loginUser.value.id !== -1);
+
+  const isAdmin = computed(() => loginUser.value.userRole === 'admin');
+
   async function fetchLoginUser() {
     // 获取当前登录的用户
     const res = await getLoginUserUsingGet();
@@ -22,5 +27,10 @@ export const useLoginUserStore = defineStore("loginUser", () => {
     loginUser.value = newLoginUser;
   }
 
-  return { loginUser, fetchLoginUser, setLoginUser };
+  async function logout() {
+    await userLogoutUsingPost();
+    loginUser.value = { userName: "未登录", id: -1 };
+  }
+
+  return { loginUser, isLoggedIn, isAdmin, fetchLoginUser, setLoginUser, logout };
 });

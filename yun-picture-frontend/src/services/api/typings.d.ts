@@ -96,6 +96,7 @@ declare namespace API {
     id?: number;
     updateTime?: string;
     userAccount?: string;
+    userAvatar?: string;
     userName?: string;
     userRole?: string;
   };
