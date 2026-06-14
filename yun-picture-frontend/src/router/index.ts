@@ -30,9 +30,29 @@ const router = createRouter({
       component: () => import('@/views/user/UserRegisterView.vue'),
     },
     {
+      path: '/user/profile',
+      name: 'profile',
+      component: () => import('@/views/user/UserProfileView.vue'),
+    },
+    {
       path: '/admin/userManage',
       name: 'userManage',
       component: () => import('@/views/admin/AdminManagePage.vue'),
+    },
+    {
+      path: '/add/picture',
+      name: '创建图片',
+      component: () => import('@/views/AddPictureView.vue'),
+    },
+    {
+      path: '/admin/pictureManage',
+      name: '管理图片',
+      component: () => import('@/views/admin/AdminPictureManageView.vue'),
+    },
+    {
+      path: '/picture/:id',
+      name: 'pictureDetail',
+      component: () => import('@/views/PictureDetailView.vue'),
     }
   ],
 })

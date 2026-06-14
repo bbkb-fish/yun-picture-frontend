@@ -1,3 +1,5 @@
+// @ts-ignore
+/* eslint-disable */
 import request from "@/request";
 
 /** addUser POST /api/user/add */

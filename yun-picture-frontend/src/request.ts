@@ -1,11 +1,27 @@
 import axios from "axios";
 import { ElMessage } from "element-plus";
+import JSONBig from "json-bigint";
+
+// 使用 json-bigint 解析 JSON，防止 Java Long 精度丢失
+const JSONBigNative = JSONBig({ storeAsString: true });
 
 // 创建自定义实例
 const request = axios.create({
   baseURL: "http://localhost:8123",
   timeout: 60000,
   withCredentials: true,
+  transformResponse: [
+    (data) => {
+      if (typeof data === "string" && data.trim()) {
+        try {
+          return JSONBigNative.parse(data);
+        } catch {
+          return data;
+        }
+      }
+      return data;
+    },
+  ],
 });
 
 // 拦截器添加到自定义实例上

@@ -5,12 +5,6 @@
     </el-row>
     <el-row class="content">
       <el-col :span="24"> <router-view /> </el-col>
-
-    </el-row>
-    <el-row class="footer">
-      <el-col :span="24">
-        <a href="https://github.com/bbkb-fish" target="_blank">This is my github</a>
-      </el-col>
     </el-row>
   </div>
 </template>
@@ -21,27 +15,16 @@ import GlobalHeader from "@/components/GlobalHeader.vue";
 
 <style scoped>
 #basicLayout {
-  height: 100vh;
 }
 #basicLayout .header {
   padding-inline: 20px;
   background: white;
   color: unset;
-  margin-bottom: 16px;
+  margin-bottom: 8px;
 }
 #basicLayout .content {
-  padding: 20px;
+  padding: 16px 20px;
   background: linear-gradient(to right, #fefefe, #fff);
-  margin-bottom: 28px;
-}
-#basicLayout .footer {
-  background: #efefef;
-  padding: 16px;
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  text-align: center;
 }
 .el-row {
   margin-bottom: 20px;
