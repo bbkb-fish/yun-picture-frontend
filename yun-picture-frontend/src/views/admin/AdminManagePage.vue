@@ -82,13 +82,12 @@
     <!-- 分页 -->
     <div class="pagination-container">
       <el-pagination
-        v-model:current-page="pagination.current"
-        v-model:page-size="pagination.pageSize"
-        :page-sizes="[5, 10, 20, 50]"
-        :total="pagination.total"
-        layout="total, sizes, prev, pager, next, jumper"
-        @size-change="handleSizeChange"
-        @current-change="handleCurrentChange"
+        background
+        layout="prev, pager, next"
+        :total="Number(pagination.total)"
+        :page-size="pagination.pageSize"
+        :current-page="pagination.current"
+        @current-change="onPageChange"
       />
     </div>
   </div>
@@ -181,7 +180,8 @@ async function handleDelete(row: API.UserVO) {
 }
 
 // 分页切换
-function handleCurrentChange() {
+function onPageChange(page: number) {
+  pagination.current = page
   loadUsers()
 }
 
@@ -232,10 +232,69 @@ onMounted(() => {
 
 .pagination-container {
   display: flex;
-  justify-content: flex-end;
+  justify-content: center;
   background: #fff;
   padding: 16px 24px;
   margin-top: 16px;
   border-radius: 8px;
+}
+
+.pagination-container :deep(.el-pager li) {
+  min-width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  font-weight: 700;
+  font-size: 14px;
+  background: #fce4ec;
+  border: 2px solid transparent;
+  color: #e91e63;
+  transition: all 0.3s ease;
+}
+
+.pagination-container :deep(.el-pager li:hover) {
+  color: #fff;
+  background: linear-gradient(135deg, #ff6b9d, #ce93d8);
+  border-color: #ff6b9d;
+  transform: translateY(-3px);
+  box-shadow: 0 6px 18px rgba(255, 107, 157, 0.4);
+}
+
+.pagination-container :deep(.el-pager li.is-active) {
+  background: linear-gradient(135deg, #ff6b9d, #ab47bc);
+  border-color: #e91e63;
+  color: #fff;
+  box-shadow: 0 0 0 4px rgba(233, 30, 99, 0.15), 0 6px 18px rgba(233, 30, 99, 0.35);
+  transform: scale(1.1);
+}
+
+.pagination-container :deep(.btn-prev),
+.pagination-container :deep(.btn-next) {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: #fce4ec;
+  border: 2px solid transparent;
+  color: #e91e63;
+  font-weight: 700;
+  font-size: 16px;
+  transition: all 0.3s ease;
+}
+
+.pagination-container :deep(.btn-prev:hover),
+.pagination-container :deep(.btn-next:hover) {
+  color: #fff;
+  background: linear-gradient(135deg, #ff6b9d, #ce93d8);
+  border-color: #ff6b9d;
+  transform: translateY(-3px) scale(1.05);
+  box-shadow: 0 6px 18px rgba(255, 107, 157, 0.4);
+}
+
+.pagination-container :deep(.btn-prev.is-disabled),
+.pagination-container :deep(.btn-next.is-disabled) {
+  background: #fafafa;
+  color: #c0c4cc;
+  border-color: transparent;
+  box-shadow: none;
+  transform: none;
 }
 </style>

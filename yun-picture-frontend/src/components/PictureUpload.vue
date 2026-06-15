@@ -1,7 +1,15 @@
 <template>
   <div class="picture-upload">
-    <!-- 阶段1：上传区域 -->
-    <div class="upload-area" v-if="!previewUrl && !uploading">
+    <!-- 阶段0：选择上传方式 -->
+    <div class="upload-mode-bar" v-if="!previewUrl && !uploading && !uploadedPicture">
+      <el-radio-group v-model="uploadMode" size="default">
+        <el-radio-button value="local">本地上传</el-radio-button>
+        <el-radio-button value="url">URL 上传</el-radio-button>
+      </el-radio-group>
+    </div>
+
+    <!-- 阶段1：本地上传区域 -->
+    <div class="upload-area" v-if="uploadMode === 'local' && !previewUrl && !uploading && !uploadedPicture">
       <el-upload
         class="upload-box"
         drag
@@ -18,8 +26,26 @@
       </el-upload>
     </div>
 
-    <!-- 阶段2：预览 + 确认上传 -->
-    <div class="preview-area" v-if="previewUrl && !uploading && !uploadedPicture">
+    <!-- 阶段1b：URL 上传区域 -->
+    <div class="url-upload-area" v-if="uploadMode === 'url' && !urlPreviewUrl && !uploading && !uploadedPicture">
+      <el-input
+        v-model="urlInput"
+        placeholder="请输入图片 URL 地址，如 https://example.com/image.jpg"
+        size="large"
+        clearable
+        @keyup.enter="handleUrlPreview"
+      >
+        <template #prefix>
+          <el-icon><Link /></el-icon>
+        </template>
+      </el-input>
+      <el-button type="primary" size="large" class="url-preview-btn" @click="handleUrlPreview" :disabled="!urlInput.trim()">
+        预览图片
+      </el-button>
+    </div>
+
+    <!-- 阶段2：预览 + 确认上传（本地） -->
+    <div class="preview-area" v-if="uploadMode === 'local' && previewUrl && !uploading && !uploadedPicture">
       <div class="preview-header">
         <span class="preview-title">图片预览</span>
         <el-button type="primary" @click="handleUpload" :loading="uploading">
@@ -33,6 +59,23 @@
       <div class="preview-info">
         <span>文件名：{{ selectedFile?.name }}</span>
         <span>大小：{{ formatSize(selectedFile?.size ?? 0) }}</span>
+      </div>
+    </div>
+
+    <!-- 阶段2b：URL 预览 + 确认上传 -->
+    <div class="preview-area" v-if="uploadMode === 'url' && urlPreviewUrl && !uploading && !uploadedPicture">
+      <div class="preview-header">
+        <span class="preview-title">URL 图片预览</span>
+        <el-button type="primary" @click="handleUrlUpload" :loading="uploading">
+          确认上传
+        </el-button>
+        <el-button @click="handleUrlCancel">重新输入</el-button>
+      </div>
+      <div class="preview-box">
+        <img :src="urlPreviewUrl" alt="URL 预览" class="preview-image" @error="handleUrlImageError" />
+      </div>
+      <div class="preview-info">
+        <span>图片地址：{{ urlInput }}</span>
       </div>
     </div>
 
@@ -166,12 +209,20 @@
 <script setup lang="ts">
 import { ref, reactive, nextTick, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
-import { Plus, Loading, CircleCheckFilled } from '@element-plus/icons-vue'
-import { uploadPictureUsingPost, editPictureUsingPost, getPictureVoByIdUsingGet } from '@/services/api/pictureController'
+import { Plus, Loading, CircleCheckFilled, Link } from '@element-plus/icons-vue'
+import { uploadPictureUsingPost, uploadPictureByUrlUsingPost, editPictureUsingPost, getPictureVoByIdUsingGet } from '@/services/api/pictureController'
 import { listPictureTagCategoryUsingGet } from '@/services/api/pictureController'
 
+// 上传模式
+const uploadMode = ref<'local' | 'url'>('local')
+
+// 本地上传
 const selectedFile = ref<File | null>(null)
 const previewUrl = ref<string>('')
+
+// URL 上传
+const urlInput = ref('')
+const urlPreviewUrl = ref('')
 const uploading = ref(false)
 const uploadedPicture = ref<API.PictureVO | null>(null)
 const saving = ref(false)
@@ -205,6 +256,42 @@ function handleFileChange(file: any) {
   previewUrl.value = URL.createObjectURL(rawFile)
   uploadedPicture.value = null
   saveResult.value = null
+  urlPreviewUrl.value = ''
+}
+
+// URL 预览
+function handleUrlPreview() {
+  const url = urlInput.value.trim()
+  if (!url) return
+  urlPreviewUrl.value = url
+}
+
+// URL 图片加载失败
+function handleUrlImageError() {
+  ElMessage.error('图片加载失败，请检查 URL 是否有效')
+  urlPreviewUrl.value = ''
+}
+
+// URL 上传
+async function handleUrlUpload() {
+  if (!urlInput.value.trim()) return
+
+  uploading.value = true
+  try {
+    const res = await uploadPictureByUrlUsingPost({
+      fileUrl: urlInput.value.trim(),
+    })
+    if (res.data.code === 0 && res.data.data) {
+      uploadedPicture.value = res.data.data
+      ElMessage.success('图片上传成功，请完善信息')
+    } else {
+      ElMessage.error(res.data.message || '上传失败')
+    }
+  } catch {
+    ElMessage.error('上传失败，请检查网络连接')
+  } finally {
+    uploading.value = false
+  }
 }
 
 // 第一步：上传图片到服务器
@@ -292,13 +379,19 @@ function handleRemoveTag(index: number) {
   formData.tags.splice(index, 1)
 }
 
-// 重新选择
+// 重新选择（本地）
 function handleCancel() {
   if (previewUrl.value) {
     URL.revokeObjectURL(previewUrl.value)
   }
   selectedFile.value = null
   previewUrl.value = ''
+}
+
+// 重新输入（URL）
+function handleUrlCancel() {
+  urlPreviewUrl.value = ''
+  urlInput.value = ''
 }
 
 // 重置，继续上传
@@ -308,6 +401,8 @@ function handleReset() {
   }
   selectedFile.value = null
   previewUrl.value = ''
+  urlInput.value = ''
+  urlPreviewUrl.value = ''
   uploadedPicture.value = null
   saveResult.value = null
   formData.name = ''
@@ -349,6 +444,26 @@ onMounted(() => {
 
 .upload-box {
   width: 100%;
+}
+
+/* 上传模式切换 */
+.upload-mode-bar {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 24px;
+}
+
+/* URL 上传 */
+.url-upload-area {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  align-items: center;
+  padding: 24px 0;
+}
+
+.url-preview-btn {
+  min-width: 160px;
 }
 
 .upload-icon {

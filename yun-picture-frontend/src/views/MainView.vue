@@ -26,7 +26,8 @@
       <!-- 分类行 -->
       <div class="filter-row" v-if="categories.length">
         <span class="filter-label">分类</span>
-        <div class="filter-tags">
+        <!-- 宽屏：标签芯片 -->
+        <div class="filter-tags" v-if="!isNarrow">
           <span
             class="filter-chip"
             :class="{ active: !selectedCategory && !searchForm.category }"
@@ -40,7 +41,20 @@
             @click="selectCategory(cat)"
           >{{ cat }}</span>
         </div>
+        <!-- 窄屏：下拉框 -->
         <el-select
+          v-if="isNarrow"
+          v-model="selectedCategory"
+          placeholder="选择分类"
+          clearable
+          class="filter-narrow-select"
+          @change="selectCategoryFromSelect"
+        >
+          <el-option label="全部分类" value="" />
+          <el-option v-for="cat in categories" :key="cat" :label="cat" :value="cat" />
+        </el-select>
+        <el-select
+          v-if="!isNarrow"
           v-model="searchForm.category"
           placeholder="下拉选择"
           clearable
@@ -55,7 +69,8 @@
       <!-- 标签行 -->
       <div class="filter-row" v-if="tagList.length">
         <span class="filter-label">标签</span>
-        <div class="filter-tags">
+        <!-- 宽屏：标签芯片 -->
+        <div class="filter-tags" v-if="!isNarrow">
           <span
             class="filter-chip"
             :class="{ active: selectedTags.length === 0 && !searchForm.tags }"
@@ -69,7 +84,22 @@
             @click="toggleTag(tag)"
           >{{ tag }}</span>
         </div>
+        <!-- 窄屏：多选下拉 -->
+        <el-select
+          v-if="isNarrow"
+          v-model="selectedTags"
+          placeholder="选择标签"
+          multiple
+          clearable
+          collapse-tags
+          collapse-tags-tooltip
+          class="filter-narrow-select"
+          @change="onTagsSelectChange"
+        >
+          <el-option v-for="tag in tagList" :key="tag" :label="tag" :value="tag" />
+        </el-select>
         <el-input
+          v-if="!isNarrow"
           v-model="searchForm.tags"
           placeholder="自定义标签，逗号分隔"
           clearable
@@ -118,15 +148,14 @@
     </div>
 
     <!-- 分页 -->
-    <div class="pagination-container" v-if="total > 0">
+    <div class="pagination-container">
       <el-pagination
-        v-model:current-page="current"
+        background
+        layout="prev, pager, next"
+        :total="Number(total)"
         :page-size="pageSize"
-        :page-sizes="pageSizeOptions"
-        :total="total"
-        layout="total, sizes, prev, pager, next, jumper"
-        @size-change="handleSizeChange"
-        @current-change="handleCurrentChange"
+        :current-page="current"
+        @current-change="onPageChange"
       />
     </div>
   </div>
@@ -141,8 +170,9 @@ const pictures = ref<API.PictureVO[]>([])
 const loading = ref(false)
 const current = ref(1)
 const total = ref(0)
+const pageSize = ref(12)
 
-// 筛选
+// 选中的筛选状态
 const categories = ref<string[]>([])
 const tagList = ref<string[]>([])
 const selectedCategory = ref('')
@@ -155,25 +185,13 @@ const searchForm = reactive({
   tags: '',
 })
 
-// 响应式：根据屏幕宽度决定列数和每页条数
+// 响应式窄屏判断
 const windowWidth = ref(window.innerWidth)
+const isNarrow = computed(() => windowWidth.value < 768)
+
 function onResize() {
   windowWidth.value = window.innerWidth
 }
-onMounted(() => window.addEventListener('resize', onResize))
-onUnmounted(() => window.removeEventListener('resize', onResize))
-
-const pageSize = computed(() => {
-  if (windowWidth.value >= 1200) return 12
-  if (windowWidth.value >= 768) return 12
-  return 8
-})
-
-const pageSizeOptions = computed(() => {
-  if (windowWidth.value >= 1200) return [12, 16, 20, 24]
-  if (windowWidth.value >= 768) return [9, 12, 15, 18]
-  return [6, 8, 10, 12]
-})
 
 // 加载图片
 async function loadPictures() {
@@ -199,6 +217,7 @@ async function loadPictures() {
       pageSize: pageSize.value,
       sortField: 'createTime',
       sortOrder: 'desc',
+      reviewStatus: 1,
       searchText,
       category,
       tags,
@@ -263,6 +282,25 @@ function onTagsInputChange() {
   loadPictures()
 }
 
+// 窄屏：分类下拉
+function selectCategoryFromSelect(val: string) {
+  searchForm.category = ''
+  selectedTags.value = []
+  searchForm.tags = ''
+  selectedCategory.value = val ?? ''
+  current.value = 1
+  loadPictures()
+}
+
+// 窄屏：标签多选下拉
+function onTagsSelectChange() {
+  searchForm.tags = ''
+  selectedCategory.value = ''
+  searchForm.category = ''
+  current.value = 1
+  loadPictures()
+}
+
 // 搜索栏
 function handleSearch() {
   selectedCategory.value = ''
@@ -294,19 +332,17 @@ async function loadTagCategory() {
   }
 }
 
-function handleCurrentChange() {
-  loadPictures()
-}
-
-function handleSizeChange() {
-  current.value = 1
+function onPageChange(page: number) {
+  current.value = page
   loadPictures()
 }
 
 onMounted(() => {
   loadTagCategory()
   loadPictures()
+  window.addEventListener('resize', onResize)
 })
+onUnmounted(() => window.removeEventListener('resize', onResize))
 </script>
 
 <style scoped>
@@ -402,6 +438,12 @@ onMounted(() => {
   margin-left: auto;
 }
 
+/* 窄屏下拉 */
+.filter-narrow-select {
+  flex: 1;
+  min-width: 0;
+}
+
 /* ====== 图片网格 ====== */
 .picture-grid {
   display: grid;
@@ -492,6 +534,70 @@ onMounted(() => {
   justify-content: center;
   margin-top: 32px;
   padding-bottom: 20px;
+}
+
+.pagination-container :deep(.el-pagination) {
+  --el-pagination-bg-color: transparent;
+  --el-pagination-hover-color: #ff6b9d;
+}
+
+.pagination-container :deep(.el-pager li) {
+  min-width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  font-weight: 700;
+  font-size: 14px;
+  background: #fce4ec;
+  border: 2px solid transparent;
+  color: #e91e63;
+  transition: all 0.3s ease;
+}
+
+.pagination-container :deep(.el-pager li:hover) {
+  color: #fff;
+  background: linear-gradient(135deg, #ff6b9d, #ce93d8);
+  border-color: #ff6b9d;
+  transform: translateY(-3px);
+  box-shadow: 0 6px 18px rgba(255, 107, 157, 0.4);
+}
+
+.pagination-container :deep(.el-pager li.is-active) {
+  background: linear-gradient(135deg, #ff6b9d, #ab47bc);
+  border-color: #e91e63;
+  color: #fff;
+  box-shadow: 0 0 0 4px rgba(233, 30, 99, 0.15), 0 6px 18px rgba(233, 30, 99, 0.35);
+  transform: scale(1.1);
+}
+
+.pagination-container :deep(.btn-prev),
+.pagination-container :deep(.btn-next) {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: #fce4ec;
+  border: 2px solid transparent;
+  color: #e91e63;
+  font-weight: 700;
+  font-size: 16px;
+  transition: all 0.3s ease;
+}
+
+.pagination-container :deep(.btn-prev:hover),
+.pagination-container :deep(.btn-next:hover) {
+  color: #fff;
+  background: linear-gradient(135deg, #ff6b9d, #ce93d8);
+  border-color: #ff6b9d;
+  transform: translateY(-3px) scale(1.05);
+  box-shadow: 0 6px 18px rgba(255, 107, 157, 0.4);
+}
+
+.pagination-container :deep(.btn-prev.is-disabled),
+.pagination-container :deep(.btn-next.is-disabled) {
+  background: #fafafa;
+  color: #c0c4cc;
+  border-color: transparent;
+  box-shadow: none;
+  transform: none;
 }
 
 .empty-state {

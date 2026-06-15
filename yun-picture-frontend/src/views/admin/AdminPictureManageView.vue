@@ -2,6 +2,16 @@
   <div class="picture-manage-page">
     <div class="page-header">
       <h2>图片管理</h2>
+      <div class="header-actions">
+        <el-button type="primary" @click="$router.push('/add/picture')">
+          <el-icon><Plus /></el-icon>
+          创建图片
+        </el-button>
+        <el-button type="success" @click="$router.push('/upload/batch')">
+          <el-icon><MagicStick /></el-icon>
+          关键词创建图片
+        </el-button>
+      </div>
     </div>
 
     <!-- 搜索栏 -->
@@ -33,6 +43,13 @@
             />
           </el-select>
         </el-form-item>
+        <el-form-item label="审核状态">
+          <el-select v-model="searchForm.reviewStatus" placeholder="全部" clearable style="width: 120px">
+            <el-option label="待审核" :value="0" />
+            <el-option label="已通过" :value="1" />
+            <el-option label="已拒绝" :value="2" />
+          </el-select>
+        </el-form-item>
         <el-form-item>
           <el-button type="primary" @click="handleSearch">搜索</el-button>
           <el-button @click="handleReset">重置</el-button>
@@ -55,6 +72,7 @@
             <el-image
               :src="row.url"
               :preview-src-list="[row.url]"
+              preview-teleported
               fit="cover"
               style="width: 60px; height: 60px; border-radius: 6px"
             />
@@ -94,24 +112,66 @@
         </el-table-column>
         <el-table-column prop="introduction" label="简介" min-width="140" show-overflow-tooltip />
         <el-table-column prop="userId" label="创建用户ID" width="110" align="center" />
+        <el-table-column label="审核信息" align="center">
+          <el-table-column label="审核状态" width="100" align="center">
+            <template #default="{ row }">
+              <el-tag v-if="row.reviewStatus === 0" type="warning" size="small">待审核</el-tag>
+              <el-tag v-else-if="row.reviewStatus === 1" type="success" size="small">已通过</el-tag>
+              <el-tag v-else-if="row.reviewStatus === 2" type="danger" size="small">已拒绝</el-tag>
+              <span v-else style="color: #999">-</span>
+            </template>
+          </el-table-column>
+          <el-table-column prop="reviewerId" label="审核人" width="90" align="center">
+            <template #default="{ row }">
+              <span v-if="row.reviewerId">{{ row.reviewerId }}</span>
+              <span v-else style="color: #999">-</span>
+            </template>
+          </el-table-column>
+          <el-table-column label="拒绝原因" min-width="140" show-overflow-tooltip align="center">
+            <template #default="{ row }">
+              <span v-if="row.reviewMessage">{{ row.reviewMessage }}</span>
+              <span v-else style="color: #999">-</span>
+            </template>
+          </el-table-column>
+        </el-table-column>
         <el-table-column prop="createTime" label="创建时间" width="170" align="center">
           <template #default="{ row }">
             {{ formatTime(row.createTime) }}
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="160" align="center" fixed="right">
+        <el-table-column label="操作" width="140" align="center" fixed="right">
           <template #default="{ row }">
-            <el-button type="primary" size="small" link @click="handleEdit(row)">编辑</el-button>
-            <el-popconfirm
-              title="确定要删除该图片吗？"
-              confirm-button-text="确定"
-              cancel-button-text="取消"
-              @confirm="handleDelete(row)"
-            >
-              <template #reference>
-                <el-button type="danger" size="small" link>删除</el-button>
-              </template>
-            </el-popconfirm>
+            <div class="action-cell">
+              <div class="action-row">
+                <el-button
+                  v-if="row.reviewStatus !== 1"
+                  type="success"
+                  size="small"
+                  link
+                  @click="handleReview(row, 1)"
+                >通过</el-button>
+                <el-button
+                  v-if="row.reviewStatus !== 2"
+                  type="danger"
+                  size="small"
+                  link
+                  @click="openRejectDialog(row)"
+                >拒绝</el-button>
+              </div>
+              <div class="action-row">
+                <el-button type="primary" size="small" link @click="handleEdit(row)">编辑</el-button>
+                <el-popconfirm
+                  title="确定要删除该图片吗？"
+                  confirm-button-text="确定"
+                  cancel-button-text="取消"
+                  @confirm="handleDelete(row)"
+                >
+                  <template #reference>
+                    <el-button type="danger" size="small" link>删除</el-button>
+                  </template>
+                </el-popconfirm>
+              </div>
+            </div>
           </template>
         </el-table-column>
       </el-table>
@@ -120,13 +180,12 @@
     <!-- 分页 -->
     <div class="pagination-container">
       <el-pagination
-        v-model:current-page="pagination.current"
-        v-model:page-size="pagination.pageSize"
-        :page-sizes="[5, 10, 20, 50]"
-        :total="pagination.total"
-        layout="total, sizes, prev, pager, next, jumper"
-        @size-change="handleSizeChange"
-        @current-change="handleCurrentChange"
+        background
+        layout="prev, pager, next"
+        :total="Number(pagination.total)"
+        :page-size="pagination.pageSize"
+        :current-page="pagination.current"
+        @current-change="onPageChange"
       />
     </div>
 
@@ -183,13 +242,32 @@
         <el-button type="primary" :loading="editing" @click="handleSaveEdit">保存</el-button>
       </template>
     </el-dialog>
+    <!-- 拒绝原因对话框 -->
+    <el-dialog v-model="rejectDialogVisible" title="拒绝原因" width="420px" :close-on-click-modal="false">
+      <el-form>
+        <el-form-item label="拒绝原因（选填）">
+          <el-input
+            v-model="rejectMessage"
+            type="textarea"
+            :rows="3"
+            placeholder="请输入拒绝原因..."
+            maxlength="200"
+            show-word-limit
+          />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="rejectDialogVisible = false">取消</el-button>
+        <el-button type="danger" :loading="reviewing" @click="handleRejectConfirm">确认拒绝</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, reactive, nextTick, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
-import { listPictureByPageUsingPost, deletePictureUsingPost, editPictureUsingPost, listPictureTagCategoryUsingGet } from '@/services/api/pictureController'
+import { listPictureByPageUsingPost, deletePictureUsingPost, editPictureUsingPost, reviewPictureUsingPost, listPictureTagCategoryUsingGet } from '@/services/api/pictureController'
 
 /** 时间格式化: yyyy-MM-dd HH:mm:ss */
 function formatTime(time?: string) {
@@ -204,6 +282,7 @@ const searchForm = reactive<API.PictureQueryDTO>({
   name: '',
   searchText: '',
   category: '',
+  reviewStatus: undefined,
 })
 
 // 分类选项
@@ -227,9 +306,14 @@ async function loadPictures() {
     const res = await listPictureByPageUsingPost({
       current: pagination.current,
       pageSize: pagination.pageSize,
+      sortField: 'createTime',
+      sortOrder: 'desc',
       name: searchForm.name || undefined,
       searchText: searchForm.searchText || undefined,
       category: searchForm.category || undefined,
+      reviewStatus: searchForm.reviewStatus !== undefined && searchForm.reviewStatus !== null
+        ? searchForm.reviewStatus
+        : undefined,
     })
     if (res.data.code === 0 && res.data.data) {
       const page = res.data.data
@@ -258,6 +342,7 @@ function handleReset() {
   searchForm.name = ''
   searchForm.searchText = ''
   searchForm.category = ''
+  searchForm.reviewStatus = undefined
   pagination.current = 1
   loadPictures()
 }
@@ -278,7 +363,8 @@ async function handleDelete(row: API.Picture) {
 }
 
 // 分页切换
-function handleCurrentChange() {
+function onPageChange(page: number) {
+  pagination.current = page
   loadPictures()
 }
 
@@ -296,6 +382,62 @@ async function loadCategories() {
     }
   } catch {
     // 静默失败
+  }
+}
+
+// ========== 审核 ==========
+const reviewing = ref(false)
+const rejectDialogVisible = ref(false)
+const rejectMessage = ref('')
+const rejectTargetId = ref<number>()
+
+// 审核通过
+async function handleReview(row: API.Picture, status: number) {
+  if (!row.id) return
+  reviewing.value = true
+  try {
+    const res = await reviewPictureUsingPost({ id: row.id, reviewStatus: status })
+    if (res.data.code === 0) {
+      ElMessage.success(status === 1 ? '审核通过' : '已拒绝')
+      loadPictures()
+    } else {
+      ElMessage.error(res.data.message || '审核失败')
+    }
+  } catch {
+    ElMessage.error('审核失败')
+  } finally {
+    reviewing.value = false
+  }
+}
+
+// 打开拒绝对话框
+function openRejectDialog(row: API.Picture) {
+  rejectTargetId.value = row.id
+  rejectMessage.value = ''
+  rejectDialogVisible.value = true
+}
+
+// 确认拒绝（带原因）
+async function handleRejectConfirm() {
+  if (!rejectTargetId.value) return
+  reviewing.value = true
+  try {
+    const res = await reviewPictureUsingPost({
+      id: rejectTargetId.value,
+      reviewStatus: 2,
+      reviewMessage: rejectMessage.value || undefined,
+    })
+    if (res.data.code === 0) {
+      ElMessage.success('已拒绝')
+      rejectDialogVisible.value = false
+      loadPictures()
+    } else {
+      ElMessage.error(res.data.message || '拒绝失败')
+    }
+  } catch {
+    ElMessage.error('拒绝失败')
+  } finally {
+    reviewing.value = false
   }
 }
 
@@ -393,6 +535,9 @@ async function handleSaveEdit() {
 }
 
 .page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   margin-bottom: 20px;
 }
 
@@ -400,6 +545,11 @@ async function handleSaveEdit() {
   margin: 0;
   font-size: 20px;
   color: #303133;
+}
+
+.header-actions {
+  display: flex;
+  gap: 10px;
 }
 
 .search-bar {
@@ -421,11 +571,70 @@ async function handleSaveEdit() {
 
 .pagination-container {
   display: flex;
-  justify-content: flex-end;
+  justify-content: center;
   background: #fff;
   padding: 16px 24px;
   margin-top: 16px;
   border-radius: 8px;
+}
+
+.pagination-container :deep(.el-pager li) {
+  min-width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  font-weight: 700;
+  font-size: 14px;
+  background: #fce4ec;
+  border: 2px solid transparent;
+  color: #e91e63;
+  transition: all 0.3s ease;
+}
+
+.pagination-container :deep(.el-pager li:hover) {
+  color: #fff;
+  background: linear-gradient(135deg, #ff6b9d, #ce93d8);
+  border-color: #ff6b9d;
+  transform: translateY(-3px);
+  box-shadow: 0 6px 18px rgba(255, 107, 157, 0.4);
+}
+
+.pagination-container :deep(.el-pager li.is-active) {
+  background: linear-gradient(135deg, #ff6b9d, #ab47bc);
+  border-color: #e91e63;
+  color: #fff;
+  box-shadow: 0 0 0 4px rgba(233, 30, 99, 0.15), 0 6px 18px rgba(233, 30, 99, 0.35);
+  transform: scale(1.1);
+}
+
+.pagination-container :deep(.btn-prev),
+.pagination-container :deep(.btn-next) {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: #fce4ec;
+  border: 2px solid transparent;
+  color: #e91e63;
+  font-weight: 700;
+  font-size: 16px;
+  transition: all 0.3s ease;
+}
+
+.pagination-container :deep(.btn-prev:hover),
+.pagination-container :deep(.btn-next:hover) {
+  color: #fff;
+  background: linear-gradient(135deg, #ff6b9d, #ce93d8);
+  border-color: #ff6b9d;
+  transform: translateY(-3px) scale(1.05);
+  box-shadow: 0 6px 18px rgba(255, 107, 157, 0.4);
+}
+
+.pagination-container :deep(.btn-prev.is-disabled),
+.pagination-container :deep(.btn-next.is-disabled) {
+  background: #fafafa;
+  color: #c0c4cc;
+  border-color: transparent;
+  box-shadow: none;
+  transform: none;
 }
 
 /* 图片信息单元格 */
@@ -436,5 +645,47 @@ async function handleSaveEdit() {
   gap: 2px;
   font-size: 12px;
   color: #606266;
+}
+
+/* 标签编辑 */
+.tag-input-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+.tag-item {
+  margin: 0;
+}
+.tag-input {
+  width: 140px;
+}
+.add-tag-btn {
+  font-size: 12px;
+}
+
+/* 操作列布局 */
+.action-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.action-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 图片预览器 - 对齐到顶部 */
+:deep(.el-image-viewer__canvas) {
+  align-items: flex-start;
+  padding-top: 20px;
+}
+
+/* 确保图片预览器在所有元素之上 */
+:deep(.el-image-viewer__wrapper) {
+  z-index: 3000 !important;
 }
 </style>

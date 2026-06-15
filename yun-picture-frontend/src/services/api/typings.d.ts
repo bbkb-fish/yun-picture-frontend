@@ -5,6 +5,12 @@ declare namespace API {
     message?: string;
   };
 
+  type BaseResponseInt_ = {
+    code?: number;
+    data?: number;
+    message?: string;
+  };
+
   type BaseResponseLong_ = {
     code?: number;
     data?: number;
@@ -132,6 +138,10 @@ declare namespace API {
     picScale?: number;
     picSize?: number;
     picWidth?: number;
+    reviewMessage?: string;
+    reviewStatus?: number;
+    reviewTime?: string;
+    reviewerId?: number;
     tags?: string;
     updateTime?: string;
     url?: string;
@@ -146,6 +156,12 @@ declare namespace API {
     tags?: string[];
   };
 
+  type PictureLoadByBatchDTO = {
+    count?: number;
+    initPic?: number;
+    searchText?: string;
+  };
+
   type PictureQueryDTO = {
     category?: string;
     current?: number;
@@ -158,11 +174,21 @@ declare namespace API {
     picScale?: number;
     picSize?: number;
     picWidth?: number;
+    reviewMessage?: string;
+    reviewStatus?: number;
+    reviewTime?: string;
+    reviewerId?: number;
     searchText?: string;
     sortField?: string;
     sortOrder?: string;
     tags?: string[];
     userId?: number;
+  };
+
+  type PictureReviewDTO = {
+    id?: number;
+    reviewMessage?: string;
+    reviewStatus?: number;
   };
 
   type PictureTagCategory = {
@@ -178,7 +204,9 @@ declare namespace API {
   };
 
   type PictureUploadDTO = {
+    fileUrl?: string;
     id?: number;
+    picName?: string;
   };
 
   type PictureVO = {

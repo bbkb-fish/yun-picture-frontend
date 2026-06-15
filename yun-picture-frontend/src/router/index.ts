@@ -50,6 +50,11 @@ const router = createRouter({
       component: () => import('@/views/admin/AdminPictureManageView.vue'),
     },
     {
+      path: '/upload/batch',
+      name: 'batchUpload',
+      component: () => import('@/views/admin/AddPictureBatchView.vue'),
+    },
+    {
       path: '/picture/:id',
       name: 'pictureDetail',
       component: () => import('@/views/PictureDetailView.vue'),
