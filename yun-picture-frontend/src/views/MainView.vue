@@ -2,7 +2,7 @@
   <div class="main-page">
     <!-- 搜索 & 筛选面板 -->
     <div class="filter-panel">
-      <!-- 搜索行：单独一行，突出 -->
+      <!-- 搜索行 -->
       <div class="search-row">
         <el-input
           v-model="searchForm.searchText"
@@ -11,16 +11,15 @@
           size="large"
           class="search-input"
           @keyup.enter="handleSearch"
+          @clear="handleReset"
         >
-          <template #prefix>
-            <el-icon><Search /></el-icon>
+          <template #suffix>
+            <span class="search-suffix-text" @click="handleSearch">
+              <el-icon><Search /></el-icon>
+              搜索
+            </span>
           </template>
         </el-input>
-        <el-button type="primary" size="large" @click="handleSearch">
-          <el-icon><Search /></el-icon>
-          搜索
-        </el-button>
-        <el-button size="large" @click="handleReset">重置</el-button>
       </div>
 
       <!-- 分类行 -->
@@ -122,7 +121,7 @@
         class="picture-card"
       >
         <div class="card-image-box">
-          <img :src="pic.url" :alt="pic.name" class="card-image" />
+          <img :src="pic.thumbnailUrl || pic.url" :alt="pic.name" class="card-image" />
         </div>
         <div class="card-body">
           <div class="card-title">{{ pic.name || '未命名' }}</div>
@@ -164,7 +163,7 @@
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted, onUnmounted } from 'vue'
 import { Search } from '@element-plus/icons-vue'
-import { listPictureVoByPageUsingPost, listPictureTagCategoryUsingGet } from '@/services/api/pictureController'
+import { listPictureVoByPageWithCacheUsingPost, listPictureTagCategoryUsingGet } from '@/services/api/pictureController'
 
 const pictures = ref<API.PictureVO[]>([])
 const loading = ref(false)
@@ -212,7 +211,7 @@ async function loadPictures() {
       tags = chipTags || inputTags
     }
 
-    const res = await listPictureVoByPageUsingPost({
+    const res = await listPictureVoByPageWithCacheUsingPost({
       current: current.value,
       pageSize: pageSize.value,
       sortField: 'createTime',
@@ -334,10 +333,13 @@ async function loadTagCategory() {
 
 function onPageChange(page: number) {
   current.value = page
+  sessionStorage.setItem('mainView_currentPage', String(page))
   loadPictures()
 }
 
 onMounted(() => {
+  const saved = sessionStorage.getItem('mainView_currentPage')
+  if (saved) current.value = Number(saved)
   loadTagCategory()
   loadPictures()
   window.addEventListener('resize', onResize)
@@ -374,6 +376,26 @@ onUnmounted(() => window.removeEventListener('resize', onResize))
 
 .search-input {
   flex: 1;
+  font-size: 16px;
+}
+
+.search-input :deep(.el-input__wrapper) {
+  padding: 8px 16px;
+  border-radius: 24px;
+}
+
+.search-suffix-text {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  color: #909399;
+  font-size: 14px;
+  transition: color 0.2s;
+  padding-right: 4px;
+}
+.search-suffix-text:hover {
+  color: #ff6b9d;
 }
 
 /* 筛选行 */

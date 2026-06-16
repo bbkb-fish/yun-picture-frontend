@@ -17,6 +17,36 @@ export async function deletePictureUsingPost(
   });
 }
 
+/** downloadRemoteHighDefinitionImage POST /api/picture/download/high */
+export async function downloadRemoteHighDefinitionImageUsingPost(
+  body: API.PictureDownloadDTO,
+  options?: { [key: string]: any }
+) {
+  return request<any>("/api/picture/download/high", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    data: body,
+    ...(options || {}),
+  });
+}
+
+/** downloadRemoteImage POST /api/picture/download/normal */
+export async function downloadRemoteImageUsingPost(
+  body: API.PictureDownloadDTO,
+  options?: { [key: string]: any }
+) {
+  return request<any>("/api/picture/download/normal", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    data: body,
+    ...(options || {}),
+  });
+}
+
 /** editPicture POST /api/picture/edit */
 export async function editPictureUsingPost(
   body: API.PictureEditDTO,
@@ -90,6 +120,24 @@ export async function listPictureVoByPageUsingPost(
     data: body,
     ...(options || {}),
   });
+}
+
+/** listPictureVOByPageWithCache POST /api/picture/list/page/vo/cache */
+export async function listPictureVoByPageWithCacheUsingPost(
+  body: API.PictureQueryDTO,
+  options?: { [key: string]: any }
+) {
+  return request<API.BaseResponsePagePictureVO_>(
+    "/api/picture/list/page/vo/cache",
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      data: body,
+      ...(options || {}),
+    }
+  );
 }
 
 /** reviewPicture POST /api/picture/picture/review */

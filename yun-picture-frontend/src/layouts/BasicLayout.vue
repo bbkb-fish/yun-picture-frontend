@@ -20,14 +20,14 @@ import GlobalHeader from "@/components/GlobalHeader.vue";
   padding-inline: 20px;
   background: white;
   color: unset;
-  margin-bottom: 8px;
+  margin-bottom: 0;
 }
 #basicLayout .content {
-  padding: 16px 20px;
+  padding: 8px 20px;
   background: linear-gradient(to right, #fefefe, #fff);
 }
 .el-row {
-  margin-bottom: 20px;
+  margin-bottom: 0;
 }
 
 .el-row:last-child {

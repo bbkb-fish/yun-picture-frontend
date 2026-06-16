@@ -133,6 +133,7 @@ declare namespace API {
     introduction?: string;
     isDelete?: number;
     name?: string;
+    originUrl?: string;
     picFormat?: string;
     picHeight?: number;
     picScale?: number;
@@ -143,9 +144,15 @@ declare namespace API {
     reviewTime?: string;
     reviewerId?: number;
     tags?: string;
+    thumbnailUrl?: string;
     updateTime?: string;
     url?: string;
     userId?: number;
+  };
+
+  type PictureDownloadDTO = {
+    fileName?: string;
+    id?: number;
   };
 
   type PictureEditDTO = {
@@ -216,12 +223,14 @@ declare namespace API {
     id?: number;
     introduction?: string;
     name?: string;
+    originUrl?: string;
     picFormat?: string;
     picHeight?: number;
     picScale?: number;
     picSize?: number;
     picWidth?: number;
     tags?: string[];
+    thumbnailUrl?: string;
     updateTime?: string;
     url?: string;
     user?: UserVO;

@@ -12,12 +12,31 @@
       <div v-if="picture" class="detail-body">
         <!-- 左侧：图片预览 -->
         <div class="detail-image-box">
-          <img :src="picture.url" :alt="picture.name" class="detail-image" />
+          <el-image
+            :src="picture.url"
+            :preview-src-list="[picture.originUrl || picture.url]"
+            :alt="picture.name"
+            fit="cover"
+            preview-teleported
+            class="detail-image"
+          />
         </div>
 
         <!-- 右侧：信息区 -->
         <div class="detail-info">
           <h2 class="detail-title">{{ picture.name || '未命名' }}</h2>
+
+          <!-- 下载按钮 -->
+          <div class="download-actions">
+            <el-button type="primary" :loading="downloading" @click="handleDownload('normal')">
+              <el-icon><Download /></el-icon>
+              下载图片
+            </el-button>
+            <el-button v-if="loginUserStore.isAdmin" type="warning" :loading="downloading" @click="handleDownload('high')">
+              <el-icon><Download /></el-icon>
+              下载原图
+            </el-button>
+          </div>
 
           <div class="info-block">
             <span class="info-label">简介</span>
@@ -119,7 +138,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
-import { ArrowLeft } from '@element-plus/icons-vue'
+import { ArrowLeft, Download } from '@element-plus/icons-vue'
 import { getPictureVoByIdUsingGet, reviewPictureUsingPost } from '@/services/api/pictureController'
 import { useLoginUserStore } from '@/stores/useLoginUserStore'
 import { ElMessage } from 'element-plus'
@@ -131,6 +150,7 @@ const loading = ref(false)
 const reviewing = ref(false)
 const rejectVisible = ref(false)
 const rejectMessage = ref('')
+const downloading = ref(false)
 
 function formatSize(bytes?: number): string {
   if (bytes === undefined || bytes === null) return '-'
@@ -192,6 +212,36 @@ async function doReview(status: 0 | 1 | 2) {
     reviewing.value = false
   }
 }
+
+/** 下载图片: normal=缩略图, high=原图（仅管理员） */
+async function handleDownload(type: 'normal' | 'high') {
+  if (!picture.value?.id) return
+  downloading.value = true
+  try {
+    const res = await fetch(`http://localhost:8123/api/picture/download/${type}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: picture.value.id, fileName: picture.value.name }),
+      credentials: 'include',
+    })
+    if (!res.ok) {
+      ElMessage.error('下载失败')
+      return
+    }
+    const blob = await res.blob()
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = picture.value.name || 'image'
+    a.click()
+    URL.revokeObjectURL(url)
+    ElMessage.success('下载成功')
+  } catch {
+    ElMessage.error('下载失败，请检查网络')
+  } finally {
+    downloading.value = false
+  }
+}
 </script>
 
 <style scoped>
@@ -241,7 +291,14 @@ async function doReview(status: 0 | 1 | 2) {
   font-size: 22px;
   font-weight: 700;
   color: #303133;
-  margin: 0 0 24px 0;
+  margin: 0 0 16px 0;
+}
+
+/* 下载按钮区 */
+.download-actions {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 24px;
 }
 
 .info-block {
@@ -331,7 +388,15 @@ async function doReview(status: 0 | 1 | 2) {
   font-weight: 600;
 }
 
-/* 响应式 */
+/* 图片预览器 - 对齐到顶部 */
+:deep(.el-image-viewer__canvas) {
+  align-items: flex-start;
+  padding-top: 20px;
+}
+
+:deep(.el-image-viewer__wrapper) {
+  z-index: 3000 !important;
+}
 @media (max-width: 768px) {
   .detail-body {
     flex-direction: column;
