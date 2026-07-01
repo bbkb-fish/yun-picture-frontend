@@ -463,7 +463,7 @@ onUnmounted(() => window.removeEventListener('resize', onResize))
 
 .search-date-picker {
   flex-shrink: 0;
-  width: 250px;
+  width: 220px;
 }
 
 .search-date-picker :deep(.el-input__wrapper) {
@@ -733,7 +733,7 @@ onUnmounted(() => window.removeEventListener('resize', onResize))
   }
 
   .search-date-picker {
-    width: 200px;
+    width: 180px;
   }
 
   .picture-grid {
