@@ -16,7 +16,6 @@
           :disabled-date="disabledDate"
           clearable
           class="search-date-picker"
-          @change="onDateRangeChange"
         />
         <el-input
           v-model="searchForm.searchText"
@@ -175,7 +174,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted, onUnmounted } from 'vue'
+import { ref, reactive, computed, watch, onMounted, onUnmounted } from 'vue'
 import { Search } from '@element-plus/icons-vue'
 import { listPictureVoByPageWithCacheUsingPost, listPictureTagCategoryUsingGet } from '@/services/api/pictureController'
 
@@ -246,18 +245,21 @@ function disabledDate(time: Date) {
   return time.getTime() > Date.now()
 }
 
-// 日期范围变更
-function onDateRangeChange(val: [string, string] | null) {
-  if (val && val.length === 2) {
-    searchForm.startEditTime = val[0] + ' 00:00:00'
-    searchForm.endEditTime = val[1] + ' 23:59:59'
-  } else {
-    searchForm.startEditTime = ''
-    searchForm.endEditTime = ''
+// 监听日期范围变化
+watch(
+  () => searchForm.dateRange,
+  (val) => {
+    if (val && val.length === 2) {
+      searchForm.startEditTime = val[0] + ' 00:00:00'
+      searchForm.endEditTime = val[1] + ' 23:59:59'
+    } else {
+      searchForm.startEditTime = ''
+      searchForm.endEditTime = ''
+    }
+    current.value = 1
+    loadPictures()
   }
-  current.value = 1
-  loadPictures()
-}
+)
 
 // 响应式窄屏判断
 const windowWidth = ref(window.innerWidth)
