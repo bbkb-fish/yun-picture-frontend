@@ -213,6 +213,9 @@ import { Plus, Loading, CircleCheckFilled, Link } from '@element-plus/icons-vue'
 import { uploadPictureUsingPost, uploadPictureByUrlUsingPost, editPictureUsingPost, getPictureVoByIdUsingGet } from '@/services/api/pictureController'
 import { listPictureTagCategoryUsingGet } from '@/services/api/pictureController'
 
+const props = defineProps<{ spaceId?: string | number }>()
+const emit = defineEmits<{ uploaded: [] }>()
+
 // 上传模式
 const uploadMode = ref<'local' | 'url'>('local')
 
@@ -280,6 +283,7 @@ async function handleUrlUpload() {
   try {
     const res = await uploadPictureByUrlUsingPost({
       fileUrl: urlInput.value.trim(),
+      spaceId: props.spaceId as any,
     })
     if (res.data.code === 0 && res.data.data) {
       uploadedPicture.value = res.data.data
@@ -302,6 +306,7 @@ async function handleUpload() {
   try {
     const res = await uploadPictureUsingPost({
       file: selectedFile.value,
+      pictureUploadDTO: props.spaceId ? { spaceId: props.spaceId } : undefined,
     } as any)
     if (res.data.code === 0 && res.data.data) {
       uploadedPicture.value = res.data.data
@@ -342,6 +347,7 @@ async function handleSave() {
         saveResult.value = uploadedPicture.value
       }
       ElMessage.success('图片信息保存成功')
+      emit('uploaded')
     } else {
       ElMessage.error(res.data.message || '保存失败')
     }

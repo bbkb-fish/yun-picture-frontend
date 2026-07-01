@@ -10,16 +10,6 @@ const router = createRouter({
       component: () => import('@/views/MainView.vue'),
     },
     {
-      path: '/about',
-      name: 'about',
-      component: () => import('@/views/AboutView.vue'),
-    },
-    {
-      path: '/info',
-      name: 'info',
-      component: () => import('@/views/InfoView.vue'),
-    },
-    {
       path: '/user/login',
       name: 'login',
       component: () => import('@/views/user/UserLoginView.vue'),
@@ -50,6 +40,11 @@ const router = createRouter({
       component: () => import('@/views/admin/AdminPictureManageView.vue'),
     },
     {
+      path: '/admin/spaceManage',
+      name: '空间管理',
+      component: () => import('@/views/admin/AdminSpaceManageView.vue'),
+    },
+    {
       path: '/upload/batch',
       name: 'batchUpload',
       component: () => import('@/views/admin/AddPictureBatchView.vue'),
@@ -58,6 +53,11 @@ const router = createRouter({
       path: '/picture/:id',
       name: 'pictureDetail',
       component: () => import('@/views/PictureDetailView.vue'),
+    },
+    {
+      path: '/space/:id',
+      name: 'spaceDetail',
+      component: () => import('@/views/SpaceDetailView.vue'),
     }
   ],
 })

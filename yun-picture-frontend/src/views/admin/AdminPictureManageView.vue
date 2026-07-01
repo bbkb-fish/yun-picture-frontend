@@ -308,6 +308,7 @@ async function loadPictures() {
       pageSize: pagination.pageSize,
       sortField: 'createTime',
       sortOrder: 'desc',
+      spaceId: -1,
       name: searchForm.name || undefined,
       searchText: searchForm.searchText || undefined,
       category: searchForm.category || undefined,

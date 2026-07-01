@@ -16,17 +16,17 @@
         <router-link to="/add/picture" class="nav-item" :class="{ active: activeIndex === '/add/picture' }">
           <span>创建图片</span>
         </router-link>
-        <router-link to="/about" class="nav-item" :class="{ active: activeIndex === '/about' }">
-          <span>关于</span>
-        </router-link>
-        <router-link to="/info" class="nav-item" :class="{ active: activeIndex === '/info' }">
-          <span>信息</span>
-        </router-link>
+        <span v-if="loginUserStore.isLoggedIn" class="nav-item" :class="{ active: activeIndex.startsWith('/space/') }" @click="goToMySpace">
+          <span>我的空间</span>
+        </span>
         <router-link v-if="loginUserStore.isAdmin" to="/admin/userManage" class="nav-item" :class="{ active: activeIndex === '/admin/userManage' }">
           <span>用户管理</span>
         </router-link>
         <router-link v-if="loginUserStore.isAdmin" to="/admin/pictureManage" class="nav-item" :class="{ active: activeIndex === '/admin/pictureManage' }">
           <span>管理图片</span>
+        </router-link>
+        <router-link v-if="loginUserStore.isAdmin" to="/admin/spaceManage" class="nav-item" :class="{ active: activeIndex === '/admin/spaceManage' }">
+          <span>空间管理</span>
         </router-link>
       </nav>
 
@@ -75,13 +75,13 @@
           <el-icon><HomeFilled /></el-icon> 主页
         </router-link>
         <router-link to="/add/picture" class="drawer-item" @click="drawerVisible = false">创建图片</router-link>
-        <router-link to="/about" class="drawer-item" @click="drawerVisible = false">关于</router-link>
-        <router-link to="/info" class="drawer-item" @click="drawerVisible = false">信息</router-link>
         <router-link to="/user/profile" class="drawer-item" @click="drawerVisible = false">
           <el-icon><User /></el-icon> 个人中心
         </router-link>
+        <span v-if="loginUserStore.isLoggedIn" class="drawer-item" @click="drawerVisible = false; goToMySpace()">我的空间</span>
         <router-link v-if="loginUserStore.isAdmin" to="/admin/userManage" class="drawer-item" @click="drawerVisible = false">用户管理</router-link>
         <router-link v-if="loginUserStore.isAdmin" to="/admin/pictureManage" class="drawer-item" @click="drawerVisible = false">管理图片</router-link>
+        <router-link v-if="loginUserStore.isAdmin" to="/admin/spaceManage" class="drawer-item" @click="drawerVisible = false">空间管理</router-link>
       </nav>
     </el-drawer>
   </header>
@@ -92,6 +92,7 @@ import { ref, watch, onMounted, onUnmounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { useLoginUserStore } from '@/stores/useLoginUserStore'
+import { listSpaceVoByPageUsingPost, addSpaceUsingPost } from '@/services/api/spaceController'
 
 const loginUserStore = useLoginUserStore()
 const router = useRouter()
@@ -120,6 +121,38 @@ const handleCommand = async (command: string) => {
 }
 
 watch(() => route.path, (p) => { activeIndex.value = p }, { immediate: true })
+
+/** 跳转到"我的空间"——无空间则自动创建 */
+async function goToMySpace() {
+  const userId = loginUserStore.loginUser.id
+  if (!userId || userId === -1) {
+    ElMessage.warning('请先登录')
+    return
+  }
+  // 查询用户是否已有空间
+  try {
+    const res = await listSpaceVoByPageUsingPost({ userId, current: 1, pageSize: 1 })
+    if (res.data.code === 0 && res.data.data?.records?.length) {
+      const space = res.data.data.records[0]
+      router.push(`/space/${space.id}`)
+      return
+    }
+  } catch { /* 查询失败则尝试创建 */ }
+
+  // 无空间，自动创建
+  try {
+    const name = (loginUserStore.loginUser.userName || '用户') + '的私有空间'
+    const createRes = await addSpaceUsingPost({ spaceName: name })
+    if (createRes.data.code === 0 && createRes.data.data) {
+      ElMessage.success('已为你创建私有空间')
+      router.push(`/space/${createRes.data.data}`)
+    } else {
+      ElMessage.error(createRes.data.message || '创建空间失败')
+    }
+  } catch {
+    ElMessage.error('创建空间失败')
+  }
+}
 </script>
 
 <style scoped>
@@ -186,6 +219,8 @@ watch(() => route.path, (p) => { activeIndex.value = p }, { immediate: true })
   text-decoration: none;
   border-radius: 8px;
   transition: all 0.2s;
+  cursor: pointer;
+  user-select: none;
 }
 
 .nav-item:hover {
@@ -290,6 +325,8 @@ watch(() => route.path, (p) => { activeIndex.value = p }, { immediate: true })
   text-decoration: none;
   border-radius: 8px;
   transition: all 0.15s;
+  cursor: pointer;
+  user-select: none;
 }
 
 .drawer-item:hover {
