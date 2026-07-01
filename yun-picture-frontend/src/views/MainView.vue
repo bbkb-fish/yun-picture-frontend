@@ -4,6 +4,20 @@
     <div class="filter-panel">
       <!-- 搜索行 -->
       <div class="search-row">
+        <el-date-picker
+          v-model="searchForm.dateRange"
+          type="daterange"
+          range-separator="至"
+          start-placeholder="开始日期"
+          end-placeholder="结束日期"
+          format="YYYY-MM-DD"
+          value-format="YYYY-MM-DD"
+          :shortcuts="dateShortcuts"
+          :disabled-date="disabledDate"
+          clearable
+          class="search-date-picker"
+          @change="onDateRangeChange"
+        />
         <el-input
           v-model="searchForm.searchText"
           placeholder="搜索图片名称或简介..."
@@ -182,7 +196,68 @@ const searchForm = reactive({
   searchText: '',
   category: '',
   tags: '',
+  dateRange: null as [string, string] | null,
+  startEditTime: '' as string,
+  endEditTime: '' as string,
 })
+
+// 日期快捷选项
+const dateShortcuts = [
+  {
+    text: '最近一周',
+    value: () => {
+      const end = new Date()
+      const start = new Date()
+      start.setDate(start.getDate() - 7)
+      return [start, end]
+    },
+  },
+  {
+    text: '最近一月',
+    value: () => {
+      const end = new Date()
+      const start = new Date()
+      start.setMonth(start.getMonth() - 1)
+      return [start, end]
+    },
+  },
+  {
+    text: '最近三月',
+    value: () => {
+      const end = new Date()
+      const start = new Date()
+      start.setMonth(start.getMonth() - 3)
+      return [start, end]
+    },
+  },
+  {
+    text: '最近一年',
+    value: () => {
+      const end = new Date()
+      const start = new Date()
+      start.setFullYear(start.getFullYear() - 1)
+      return [start, end]
+    },
+  },
+]
+
+// 禁用未来日期
+function disabledDate(time: Date) {
+  return time.getTime() > Date.now()
+}
+
+// 日期范围变更
+function onDateRangeChange(val: [string, string] | null) {
+  if (val && val.length === 2) {
+    searchForm.startEditTime = val[0] + ' 00:00:00'
+    searchForm.endEditTime = val[1] + ' 23:59:59'
+  } else {
+    searchForm.startEditTime = ''
+    searchForm.endEditTime = ''
+  }
+  current.value = 1
+  loadPictures()
+}
 
 // 响应式窄屏判断
 const windowWidth = ref(window.innerWidth)
@@ -220,6 +295,8 @@ async function loadPictures() {
       searchText,
       category,
       tags,
+      startEditTime: searchForm.startEditTime || undefined,
+      endEditTime: searchForm.endEditTime || undefined,
     })
     if (res.data.code === 0 && res.data.data) {
       const page = res.data.data
@@ -312,6 +389,9 @@ function handleReset() {
   searchForm.searchText = ''
   searchForm.category = ''
   searchForm.tags = ''
+  searchForm.dateRange = null
+  searchForm.startEditTime = ''
+  searchForm.endEditTime = ''
   selectedCategory.value = ''
   selectedTags.value = []
   current.value = 1
@@ -377,6 +457,16 @@ onUnmounted(() => window.removeEventListener('resize', onResize))
 .search-input {
   flex: 1;
   font-size: 16px;
+}
+
+.search-date-picker {
+  flex-shrink: 0;
+  width: 250px;
+}
+
+.search-date-picker :deep(.el-input__wrapper) {
+  border-radius: 24px;
+  padding: 8px 16px;
 }
 
 .search-input :deep(.el-input__wrapper) {
@@ -638,6 +728,10 @@ onUnmounted(() => window.removeEventListener('resize', onResize))
 @media (max-width: 768px) {
   .main-page {
     padding: 12px;
+  }
+
+  .search-date-picker {
+    width: 200px;
   }
 
   .picture-grid {
