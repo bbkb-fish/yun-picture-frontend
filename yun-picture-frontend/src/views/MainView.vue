@@ -457,13 +457,13 @@ onUnmounted(() => window.removeEventListener('resize', onResize))
 }
 
 .search-input {
-  flex: 1;
+  flex: 2;
   font-size: 16px;
 }
 
 .search-date-picker {
-  flex-shrink: 0;
-  width: 220px;
+  flex: 1;
+  min-width: 0;
 }
 
 .search-date-picker :deep(.el-input__wrapper) {
@@ -733,7 +733,11 @@ onUnmounted(() => window.removeEventListener('resize', onResize))
   }
 
   .search-date-picker {
-    width: 180px;
+    flex: 0.8;
+  }
+
+  .search-input {
+    flex: 1;
   }
 
   .picture-grid {
