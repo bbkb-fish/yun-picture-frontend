@@ -65,17 +65,16 @@
           <el-option label="全部分类" value="" />
           <el-option v-for="cat in categories" :key="cat" :label="cat" :value="cat" />
         </el-select>
-        <el-select
+        <el-input
           v-if="!isNarrow"
           v-model="searchForm.category"
-          placeholder="下拉选择"
+          placeholder="搜索分类"
           clearable
           size="small"
-          class="filter-inline-select"
-          @change="onCategorySelectChange"
-        >
-          <el-option v-for="cat in categories" :key="cat" :label="cat" :value="cat" />
-        </el-select>
+          class="filter-inline-input"
+          @keyup.enter="onCategoryInputSearch"
+          @clear="onCategoryInputSearch"
+        />
       </div>
 
       <!-- 标签行 -->
@@ -343,8 +342,8 @@ function clearTags() {
   loadPictures()
 }
 
-// 筛选栏右侧下拉/输入
-function onCategorySelectChange() {
+// 筛选栏右侧搜索分类输入
+function onCategoryInputSearch() {
   selectedCategory.value = ''
   selectedTags.value = []
   searchForm.tags = ''
